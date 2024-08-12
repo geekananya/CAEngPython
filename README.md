@@ -62,9 +62,4 @@
    - [ ] **Version Control**: Use Git for version control, practice writing good commit messages, and collaborate using GitHub or GitLab.
    - [ ] **Code Reviews**: Learn how to perform and receive code reviews constructively.
 
-### 12. **Continuous Learning and Networking**
-   - [ ] **Follow Python News**: Stay updated with the latest Python developments by following Python.org, PyPI, and related communities.
-   - [ ] **Open Source Contribution**: Contribute to open-source Python projects on GitHub.
-   - [ ] **Attend Meetups and Conferences**: Participate in Python meetups, webinars, or conferences like PyCon.
-
-This checklist is designed to help you build a strong foundation in Python development and advance your skills throughout your first year as a software developer.
+This checklist is designed to help you build a strong foundation in Python development and advance your skills throughout your first 6 months as a software engineer.
