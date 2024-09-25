@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Available Rides</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <h1>Available Rides</h1>
+    <p>Your Age: {{ age }}</p>
+    <p>Your Height: {{ height }} cm</p>
+    
+    {% if available_rides %}
+        <h2>Rides you can take:</h2>
+        <ul>
+            {% for ride in available_rides %}
+                <li>{{ ride.name }} - Price: ${{ ride.price }}</li>
+            {% endfor %}
+        </ul>
+        <h3>Total Price: ${{ total_price }}</h3>
+    {% else %}
+        <h2>Not allowed for your age or height!</h2>
+        <p>Unfortunately, you cannot take any rides.</p>
+    {% endif %}
+
+    <a href="{{ url_for('index') }}">Go back</a>
+</body>
+</html>
