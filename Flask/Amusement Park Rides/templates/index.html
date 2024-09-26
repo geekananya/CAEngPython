@@ -11,7 +11,7 @@
     <h1>Amusement Park Rides</h1>
     <ul>
     {% for ride in rides %}
-    <li style="margin-bottom: 0.5rem;">{{ ride.name }} - Price: <strong>${{ ride.price }} </strong> - Min-Age: <strong>${{ ride.age_limit }} </strong> Min-Height: <strong>${{ ride.height_limit}} </strong>cms </li>
+    <li style="margin-bottom: 0.5rem;">{{ ride.name }} - Price: <strong>${{ ride.price }}, </strong> - Min-Age: <strong>{{ ride.age_limit }}, </strong> Min-Height: <strong>{{ ride.height_limit}} </strong>cms </li>
     {% endfor %}
     </ul>
     <form method="POST">

@@ -18,6 +18,8 @@
         <button type="submit">Login</button>
     </form>
 
-    <a href="{{ url_for('index') }}">Go back</a>
+    {% if error %}
+    <h3>Error: {{error}}</h3>
+    {% endif %}
 </body>
 </html>
