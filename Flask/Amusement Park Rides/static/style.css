@@ -44,4 +44,10 @@ button:hover {
 ul {
     list-style-type: none;
     padding: 0;
+    text-align: center;
+}
+
+a {
+    text-decoration: none;
+    color: white
 }
