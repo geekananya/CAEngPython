@@ -1,3 +1,4 @@
+from crypt import methods
 from xml.dom import NotFoundErr
 
 from database import credentials, Rides, rides_data
@@ -86,7 +87,7 @@ def remove_ride():
         return redirect(url_for('home', usertype='admin'))
         # return render_template('admin_dashboard.html', rides = ridesInstance.get_rides())   # cant use redirect here because we are inside rides/
 
-@app.route('/rides/update-ride')
+@app.route('/rides/update-ride', methods=['GET', 'POST'])
 def update_ride():
     name = request.args.get('ride')
     print(name)
@@ -99,12 +100,12 @@ def update_ride():
                 info['height_limit'] = request.form.get('height_limit')
             if request.form.get('price') is not None:
                 info['price'] = request.form.get('price')
-            ridesInstance.add_ride(name, info)
+            ridesInstance.update_ride(name, **info)
 
         except Exception as e:
             print(e)
         finally:
-            return redirect('/home/admin')
+            return redirect(url_for('home', usertype='admin'))
     return render_template('editride.html', ride=name)
 
 if __name__ == "__main__":
