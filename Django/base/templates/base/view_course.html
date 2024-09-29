@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Course details</title>
+</head>
+<body>
+    <h2>Course Details</h2>
+
+    <h3>{{course.name}}</h3>
+    {% if course.description %}
+    <p>{{course.description}}</p>
+    {% else %}
+    <p>[No Description available]</p>
+    {% endif %}
+    <p>Students Enrolled : {{course.number_of_students}}</p>
+
+
+</body>
+</html>

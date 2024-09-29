@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard</title>
+</head>
+<body>
+
+    <a href="logout"><button>Logout</button></a>
+
+  <h1>Welcome, {{request.user}} </h1>
+
+  <a href="view"><button>View all courses</button></a>
+  <a href="create"><button>Add course</button></a>
+
+  {% block content %}
+
+  {% endblock %}
+
+
+</body>
+</html>
