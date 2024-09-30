@@ -1,12 +1,13 @@
 # test_bank_account.py
 import unittest
+from unittest.mock import patch
 from bank_account import BankAccount
 
 class TestBankAccount(unittest.TestCase):
 
     def setUp(self):                        # runs before each unit test case
-        self.account = BankAccount(100)
-        self.account2 = BankAccount()
+        self.account = BankAccount(1, 100)
+        self.account2 = BankAccount(5)
 
     def tearDown(self):
         del self.account
@@ -43,6 +44,23 @@ class TestBankAccount(unittest.TestCase):
         with self.assertRaises(ValueError) as exc:
             self.account2.withdraw(0)
         self.assertEqual(str(exc.exception), "Withdrawal amount must be positive")
+
+    def test_get_owner_email(self):
+
+        with patch('bank_account.requests.get') as mock_get:         # get is function that hits end point, provide it return val
+            mock_get.return_value.ok = True
+            mock_get.return_value.text = 'email@abc.com'
+
+            em = self.account.get_owner_email()
+            # assert
+            mock_get.assert_called_with('https://dummyjson.com/users/1')
+            self.assertEqual(em, '1:email@abc.com')
+
+            mock_get.return_value.ok = False
+            em = self.account2.get_owner_email()
+
+            mock_get.assert_called_with('https://dummyjson.com/users/5')
+            self.assertEqual(em, 'Bad Response!')
 
 if __name__ == '__main__':
     unittest.main()
