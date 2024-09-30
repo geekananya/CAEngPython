@@ -8,14 +8,15 @@ from django.contrib.auth.models import User
 # similar syntax to django.forms
 
 class PostSerializer(serializers.ModelSerializer):
+    author_id = serializers.PrimaryKeyRelatedField(read_only=True)  # Make it read-only
+
     class Meta :
         model = Posts
         fields = '__all__'
 
-    # def create(self, validated_data):
-    #     author = User.objects.get(self.context['request'].user).id
-    #     validated_data['author_id'] = author  # Set the author field
-    #     return super().create(validated_data)
+    def create(self, validated_data):
+        validated_data['author_id'] = int(self.context['author'])
+        return super().create(validated_data)
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta :
