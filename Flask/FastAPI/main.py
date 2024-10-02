@@ -1,19 +1,14 @@
 from fastapi import FastAPI, Depends, HTTPException
 import schemas, models
 from sqlalchemy.orm import Session
-from database import engine, SessionLocal
+from database import engine, get_db
+from auth.routers import router as auth_router
 
 app = FastAPI()
 
-# create db session instance
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
 models.Base.metadata.create_all(engine)    # initialise db with tables
+
+app.include_router(auth_router)
 
 @app.get("/")
 async def root():
@@ -46,6 +41,7 @@ async def update_student(id: int, req: schemas.Student, db: Session = Depends(ge
     if student is None:
         raise HTTPException(status_code=404, detail="Student not found")
 
+    print(req)
     if student.course_id != req.course_id :
         new_course = db.query(models.Course).filter(models.Course.course_id == req.course_id).first()
         if not new_course:
@@ -53,11 +49,17 @@ async def update_student(id: int, req: schemas.Student, db: Session = Depends(ge
         old_course = db.query(models.Course).filter(models.Course.course_id == req.course_id).first()
         new_course.number_of_students += 1
         old_course.number_of_students -= 1
-
-    student.name = req.name
-    student.course_id = req.course_id
-    student.email = req.email
-    student.avg_marks = req.avg_marks
+    if req.name is not None:
+        student.name = req.name
+    if req.course_id is not None:
+        student.course_id = req.course_id
+    if req.email is not None:
+        student.email = req.email
+    if req.avg_marks is not None:
+        student.avg_marks = req.avg_marks
+    db.add(student)
+    db.commit()
+    db.refresh(student)
     return student
 
 @app.delete("/students/delete")    #update
