@@ -29,3 +29,11 @@ class Student(Base):        # schema name
     course_id= Column(Integer, ForeignKey("courses.course_id"))
 
     course = relationship("Course", back_populates="students")
+
+
+class Image(Base):
+    __tablename__ = 'images'
+
+    id = Column(Integer, primary_key=True, index=True)
+    filename = Column(String)
+    path = Column(String)

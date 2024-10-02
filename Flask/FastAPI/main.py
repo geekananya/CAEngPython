@@ -1,14 +1,18 @@
-from fastapi import FastAPI, Depends, HTTPException
+from datetime import datetime
+from fastapi import FastAPI, Depends, HTTPException, UploadFile, File
+from fastapi.params import Depends
 import schemas, models
 from sqlalchemy.orm import Session
 from database import engine, get_db
-from auth.routers import router as auth_router
+# from auth.routers import router as auth_router
+import os
+import shutil
 
 app = FastAPI()
 
 models.Base.metadata.create_all(engine)    # initialise db with tables
 
-app.include_router(auth_router)
+# app.include_router(auth_router)
 
 @app.get("/")
 async def root():
@@ -86,11 +90,6 @@ async def fetch_student_from_id(id: int, db: Session = Depends(get_db)):        
 # dynamic routes after static routes so that type validation doesnt make other nested routes erroneous.
 
 
-
-
-
-
-
 # course routes
 
 @app.post("/courses/create")    #create
@@ -142,3 +141,33 @@ async def fetch_course_from_id(id: int, db: Session = Depends(get_db)):
     if course is None:
         raise HTTPException(status_code=404, detail="Course not found")
     return course
+
+
+UPLOAD_DIRECTORY = "./images"
+os.makedirs(UPLOAD_DIRECTORY, exist_ok=True)
+
+@app.post('/upload', description="Upload an image of your choice to store in the db")
+async def upload_img(file: UploadFile = File(...), db: Session = Depends(get_db)):
+    if file.content_type not in ["image/jpeg", "image/png", "image/gif"]:
+        raise HTTPException(status_code=400, detail="Invalid image type. Only JPEG, PNG, and GIF are allowed.")
+
+    # file.filename += str(datetime.now())
+    print(file.filename)
+    file_location = os.path.join(UPLOAD_DIRECTORY, file.filename)
+    with open(file_location, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+
+    img = models.Image(filename=file.filename, path=file_location)
+    db.add(img)
+    db.commit()
+    db.refresh(img)
+
+    return {"filename": file.filename, "content_type": file.content_type}
+
+@app.get('/view', description="View all upload images")
+def get_imgs(db: Session = Depends(get_db)):
+    imgs = db.query(models.Image).all()
+    # resp = []
+    # for img in imgs:
+    #     resp.append(schemas.Image({'path': }))
+    return imgs

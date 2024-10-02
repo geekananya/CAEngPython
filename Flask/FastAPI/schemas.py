@@ -23,3 +23,8 @@ class Course(BaseModel):
     course_id: int = 0                  # pydantic models also validate different types of data eg. email
     name: str
     number_of_students: int
+
+
+class Image(BaseModel):
+    filename: str
+    path: str
