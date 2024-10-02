@@ -1,12 +1,13 @@
 from datetime import datetime
 from fastapi import FastAPI, Depends, HTTPException, UploadFile, File
 from fastapi.params import Depends
-import schemas, models
+import FastAPI.schemas as schemas, FastAPI.models as models
 from sqlalchemy.orm import Session
-from database import engine, get_db
-# from auth.routers import router as auth_router
+from FastAPI.database import engine, get_db
+# from FastAPI.auth.routers import router as auth_router
 import os
 import shutil
+# from FastAPI.auth.security import get_user, oauth2_scheme
 
 app = FastAPI()
 
@@ -41,6 +42,7 @@ async def create_student(req: schemas.Student, db: Session = Depends(get_db)):
 
 @app.put("/students/update")    #update
 async def update_student(id: int, req: schemas.Student, db: Session = Depends(get_db)):
+    # get_user(db, token)
     student = db.query(models.Student).filter(models.Student.id == id).first()
     if student is None:
         raise HTTPException(status_code=404, detail="Student not found")
@@ -171,3 +173,10 @@ def get_imgs(db: Session = Depends(get_db)):
     # for img in imgs:
     #     resp.append(schemas.Image({'path': }))
     return imgs
+
+
+@app.get('/users')
+async def fetch_users(limit=100, db: Session = Depends(get_db)):                     # add limit query param
+    print(db.query(models.User).all())
+    users = db.query(models.User).limit(limit).all()
+    return users

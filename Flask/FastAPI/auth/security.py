@@ -3,7 +3,7 @@ from datetime import datetime, timedelta, timezone
 from fastapi import status, Depends, HTTPException
 from fastapi.security import OAuth2PasswordBearer
 from passlib.context import CryptContext
-from ..models import User as DbUser
+from FastAPI.models import User as DbUser
 
 SECRET_KEY = "f0917ba04c0d74a1026d3d55314451357ae8a8f716022cada288e2354a95cba1"
 ALGORITHM = "HS256"
