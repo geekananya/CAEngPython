@@ -1,12 +1,32 @@
-from crypt import methods
-from xml.dom import NotFoundErr
-
-from database import credentials, Rides, rides_data
 from flask import Flask, render_template, request, redirect, url_for
+from xml.dom import NotFoundErr
+# from flaskext.mysql import MySQL
+import pymysql
+from database import credentials, Rides, rides_data
 
 app = Flask(__name__)
-ridesInstance = Rides()     #instantiate class for this session
-ridesInstance.initialize_rides(rides_data)
+# ridesInstance = Rides()     #instantiate class for this session
+# ridesInstance.initialize_rides(rides_data)
+
+# init db connection
+# mysql = MySQL()
+# app.config['MYSQL_DATABASE_USER'] = 'root'
+# app.config['MYSQL_DATABASE_PASSWORD'] = 'root@ananya'
+# app.config['MYSQL_DATABASE_DB'] = 'EmpData'
+# app.config['MYSQL_DATABASE_HOST'] = 'localhost'
+# mysql.init_app(app)
+
+def get_db_connection():
+    return pymysql.connect(
+        host='localhost',
+        user='root',
+        password='root@ananya',
+        db='AmusementPark',
+        cursorclass=pymysql.cursors.DictCursor
+    )
+
+# conn = get_db_connection()
+# cursor = conn.cursor()
 
 
 def check_credentials(user, passw):
@@ -39,27 +59,36 @@ def login():
 
 @app.route('/home/<usertype>', methods=['GET', 'POST'])
 def home(usertype):
+
+    connection = get_db_connection()
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT * FROM rides")
+        rides = cursor.fetchall()
+    connection.close()
+
     if usertype == 'admin':
         if request.method == 'POST':
             print('post')
-        return render_template('/admin_dashboard.html', rides = ridesInstance.get_rides())
+        return render_template('/admin_dashboard.html', rides=rides)
 
     if request.method == 'POST':
         age = int(request.form['age'])
         height = int(request.form['height'])
 
-        # Filtering rides based on age and height
-        available_rides = []
         total_price = 0
+        # Filtering rides based on age and height
+        connection = get_db_connection()
+        with connection.cursor() as cursor:
+            cursor.execute(f"SELECT * from rides where age_limit<={age} and height_limit<= {height}")
+            available_rides = cursor.fetchall()
+        connection.close()
 
-        for ride in ridesInstance.get_rides():
-            if age >= ride.age_limit and (ride.height_limit == 0 or height >= ride.height_limit):
-                available_rides.append(ride)
-                total_price += ride.price
+        for ride in available_rides:
+            total_price += ride.get('price')
 
         return render_template('result.html', available_rides=available_rides, total_price=total_price, age=age, height=height)
 
-    return render_template('index.html',rides=ridesInstance.get_rides(), usertype=usertype)
+    return render_template('index.html',rides=rides, usertype=usertype)
 
 
 @app.route('/rides/add-ride', methods=['GET', 'POST'])
@@ -70,20 +99,39 @@ def add_ride():             # url-for looks for the function that handles itm an
         height_limit = int(request.form['height_limit'])
         price = int(request.form.get('price'))
 
-        ridesInstance.add_ride(name=name, age_limit=age_limit, height_limit=height_limit, price=price)
+        connection = get_db_connection()
+        try:
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    "INSERT INTO rides (name, age_limit, height_limit, price) VALUES (%s, %s, %s, %s)",
+                    (name, age_limit, height_limit, price)
+                )
+                connection.commit()
+            print("Added successfully")
+        except Exception as e:
+            print(f"An error occurred: {e}")
+        finally:
+            connection.close()
 
-        print("added successfully")
         return redirect('/home/admin')
 
     return render_template('newride.html')
 
 @app.route('/rides/remove-ride')
 def remove_ride():
+    connection = get_db_connection()
     try:
-        ridesInstance.remove_ride(request.args.get('ride'))
+        with connection.cursor() as cursor:
+            cursor.execute(
+                f"DELETE from rides where name='{request.args.get('ride')}'"
+            )
+            connection.commit()
     except NotFoundErr as nfe:
         print(nfe)
+    except Exception as e:
+        print('db exception', e)
     finally:
+        connection.close()
         return redirect(url_for('home', usertype='admin'))
         # return render_template('admin_dashboard.html', rides = ridesInstance.get_rides())   # cant use redirect here because we are inside rides/
 
@@ -92,15 +140,26 @@ def update_ride():
     name = request.args.get('ride')
     print(name)
     if request.method == 'POST':
+        connection = get_db_connection()
+        info = {}
+        if len(request.form.get('age_limit')) :
+            info['age_limit'] = request.form.get('age_limit')
+        if len(request.form.get('height_limit')) :
+            info['height_limit'] = request.form.get('height_limit')
+        if len(request.form.get('price')) :
+            info['price'] = request.form.get('price')
+
+        set_clause = []
+        for key, value in info.items():
+            set_clause.append(f"{key} = %s")  # Using %s for parameterized queries
+
+        set_clause_str = ', '.join(set_clause)
         try:
-            info = {}
-            if request.form.get('age_limit') is not None:
-                info['age_limit'] = request.form.get('age_limit')
-            if request.form.get('height_limit') is not None:
-                info['height_limit'] = request.form.get('height_limit')
-            if request.form.get('price') is not None:
-                info['price'] = request.form.get('price')
-            ridesInstance.update_ride(name, **info)
+            with connection.cursor() as cursor:
+                query = f"UPDATE rides SET {set_clause_str} WHERE name = %s"
+                print('query', query)
+                cursor.execute(query, (*info.values(), name))
+                connection.commit()
 
         except Exception as e:
             print(e)
