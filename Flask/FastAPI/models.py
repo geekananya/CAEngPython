@@ -1,5 +1,5 @@
 from sqlalchemy.orm import relationship
-from FastAPI.database import Base
+from database import Base
 from sqlalchemy import Column, Integer, String, Float, ForeignKey
 
 class User(Base):

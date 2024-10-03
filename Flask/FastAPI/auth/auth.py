@@ -2,8 +2,8 @@ from datetime import timedelta
 from fastapi import HTTPException, status, Depends
 from fastapi.security import OAuth2PasswordRequestForm
 from .security import get_password_hash, verify_password, create_access_token
-from FastAPI.schemas import User as PyUser
-from FastAPI.models import User as DbUser
+from schemas import User as PyUser
+from models import User as DbUser
 
 
 

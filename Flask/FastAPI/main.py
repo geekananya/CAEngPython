@@ -1,19 +1,19 @@
 from datetime import datetime
 from fastapi import FastAPI, Depends, HTTPException, UploadFile, File
 from fastapi.params import Depends
-import FastAPI.schemas as schemas, FastAPI.models as models
+import schemas as schemas, models as models
 from sqlalchemy.orm import Session
-from FastAPI.database import engine, get_db
-# from FastAPI.auth.routers import router as auth_router
+from database import engine, get_db
+from auth.routers import router as auth_router
 import os
 import shutil
-# from FastAPI.auth.security import get_user, oauth2_scheme
+from auth.security import get_user, oauth2_scheme
 
 app = FastAPI()
 
 models.Base.metadata.create_all(engine)    # initialise db with tables
 
-# app.include_router(auth_router)
+app.include_router(auth_router)
 
 @app.get("/")
 async def root():
@@ -25,7 +25,7 @@ async def fetch_students(limit=100, db: Session = Depends(get_db)):             
     students = db.query(models.Student).limit(limit).all()
     return students
 
-@app.post("/students/create")    #create
+@app.post("/students/create", dependencies=[Depends(oauth2_scheme)])    #create
 async def create_student(req: schemas.Student, db: Session = Depends(get_db)):
 
     course = db.query(models.Course).filter(models.Course.course_id == req.course_id).first()
@@ -40,9 +40,9 @@ async def create_student(req: schemas.Student, db: Session = Depends(get_db)):
     db.refresh(new_student)
     return new_student
 
-@app.put("/students/update")    #update
+@app.put("/students/update", dependencies=[Depends(oauth2_scheme)])    #update
 async def update_student(id: int, req: schemas.Student, db: Session = Depends(get_db)):
-    # get_user(db, token)
+    get_user(db, token)
     student = db.query(models.Student).filter(models.Student.id == id).first()
     if student is None:
         raise HTTPException(status_code=404, detail="Student not found")
@@ -68,7 +68,7 @@ async def update_student(id: int, req: schemas.Student, db: Session = Depends(ge
     db.refresh(student)
     return student
 
-@app.delete("/students/delete")    #update
+@app.delete("/students/delete", dependencies=[Depends(oauth2_scheme)])    #update
 async def delete_student(id: int, db: Session = Depends(get_db)):
     student = db.query(models.Student).filter(models.Student.id == id).first()
     if student is None:
@@ -94,7 +94,7 @@ async def fetch_student_from_id(id: int, db: Session = Depends(get_db)):        
 
 # course routes
 
-@app.post("/courses/create")    #create
+@app.post("/courses/create", dependencies=[Depends(oauth2_scheme)])    #create
 async def create_course(req: schemas.Course, db: Session = Depends(get_db)):       # FastAPI's dependency injection
     new_course = models.Course(name=req.name, number_of_students=req.number_of_students)
     # add to db
@@ -104,7 +104,7 @@ async def create_course(req: schemas.Course, db: Session = Depends(get_db)):    
     return new_course
 
 
-@app.put("/courses/update")    #update
+@app.put("/courses/update", dependencies=[Depends(oauth2_scheme)])    #update
 async def update_course(id: int, new_name: str, db: Session = Depends(get_db)):
     course = db.query(models.Course).filter(models.Course.course_id == id).first()
     if course is None:
@@ -117,7 +117,7 @@ async def update_course(id: int, new_name: str, db: Session = Depends(get_db)):
     return course
 
 
-@app.delete("/courses/delete")    #delete
+@app.delete("/courses/delete", dependencies=[Depends(oauth2_scheme)])    #delete
 async def delete_course(id: int, db: Session = Depends(get_db)):
     course = db.query(models.Course).filter(models.Course.course_id == id).first()
     if course is None:

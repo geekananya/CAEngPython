@@ -3,8 +3,9 @@ from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from .auth import register_user, authenticate_user
 from .security import create_access_token, oauth2_scheme, get_user
-from FastAPI.database import get_db       # python doesn't record where a package was loaded from. So relative imports wont work
-from FastAPI.schemas import User
+from database import get_db       # python doesn't record where a package was loaded from. So relative imports wont work
+from schemas import User
+# above files are inside cwd, so python can directly access them
 
 router = APIRouter()
 
