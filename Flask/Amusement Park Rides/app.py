@@ -1,32 +1,26 @@
 from flask import Flask, render_template, request, redirect, url_for
 from xml.dom import NotFoundErr
-# from flaskext.mysql import MySQL
 import pymysql
+# from dotenv import load_dotenv      #development purpose only
 from database import credentials, Rides, rides_data
+import os
 
 app = Flask(__name__)
+# load_dotenv()
+
 # ridesInstance = Rides()     #instantiate class for this session
 # ridesInstance.initialize_rides(rides_data)
 
 # init db connection
-# mysql = MySQL()
-# app.config['MYSQL_DATABASE_USER'] = 'root'
-# app.config['MYSQL_DATABASE_PASSWORD'] = 'root@ananya'
-# app.config['MYSQL_DATABASE_DB'] = 'EmpData'
-# app.config['MYSQL_DATABASE_HOST'] = 'localhost'
-# mysql.init_app(app)
-
 def get_db_connection():
     return pymysql.connect(
-        host='localhost',
-        user='root',
-        password='root@ananya',
-        db='AmusementPark',
+        host=os.environ.get('MYSQL_HOST'),
+        user=os.environ.get('MYSQL_USERNAME'),
+        password=os.environ.get('MYSQL_PASSWORD'),
+        port=int(os.environ.get('MYSQL_PORT', 3306)),
+        db=os.environ.get('MYSQL_DBNAME'),
         cursorclass=pymysql.cursors.DictCursor
     )
-
-# conn = get_db_connection()
-# cursor = conn.cursor()
 
 
 def check_credentials(user, passw):
@@ -42,7 +36,6 @@ def check_credentials(user, passw):
 
 @app.route('/', methods=['GET'])
 def index():
-    print('on root route')
     return redirect('/login', 302)
 
 @app.route('/login', methods=['GET', 'POST'])       # to tell which methods this route will respond to (by default, only GET)
@@ -168,5 +161,8 @@ def update_ride():
     return render_template('editride.html', ride=name)
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(
+        port=7340,
+        debug=True
+    )
 
