@@ -3,7 +3,7 @@ services:
     # image: flask-app   --disadvantage, this img is static and needs to be rebuilt after every change
     build: .
     ports:
-      - 8080:8080
+      - 7342:7340
     environment:
       - FLASK_ENV=development
       - MYSQL_HOST=db
