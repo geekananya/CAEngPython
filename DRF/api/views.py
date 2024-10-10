@@ -7,11 +7,11 @@ from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.authtoken.models import Token
-from rest_framework.status import HTTP_403_FORBIDDEN, HTTP_401_UNAUTHORIZED
+from rest_framework.status import HTTP_403_FORBIDDEN, HTTP_401_UNAUTHORIZED, HTTP_400_BAD_REQUEST
 
-from .models import Posts
+from .models import Posts, Likes
 from django.contrib.auth.models import User
-from .serializers import UserSerializer, PostSerializer
+from .serializers import UserSerializer, PostSerializer, LikesSerializer
 
 
 # this guy implemented his own login/register functions, and utilised drf tokens to generate tokens and verify/validate them
@@ -21,10 +21,12 @@ from .serializers import UserSerializer, PostSerializer
 
 @api_view(['POST'])
 def login(request):
-    user = get_object_or_404(User, username=request.data.get('username'))
-    if not user.check_password(request.data.get('password')):
-        return Response({"detail": "Invalid Credentials"}, status.HTTP_400_BAD_REQUEST)
-    print(user.username) # Replace with the correct user ID
+    print("req.data", request.data)
+    user = User.objects.filter(username=request.data.get('username')).first()
+    print(user)
+    if not user or not user.check_password(request.data.get('password')):
+        return Response({"error": "Invalid Credentials"})
+    # print(user.username)
     user.is_active = True
     user.save()
     token, created = Token.objects.get_or_create(user=user)
@@ -38,14 +40,17 @@ def register(request):
     # print(request.data)
     if serialiser.is_valid():
         serialiser.save()
-        user = User.objects.get(email=request.data.get('email'))  # no need to be parsed by python, db purpose only
+        user = User.objects.get(username=request.data.get('username'))  # no need to be parsed by python, db purpose only
         user.set_password(request.data.get('password'))  # hashes password
+        user.is_active = True
         user.save()
         print(user.password)
         token = Token.objects.create(user=user)
         print(token)
         return Response({'token': token.key, 'user': serialiser.data})
-    return Response(serialiser.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    print(serialiser)
+    return Response({'error': serialiser.errors})
 
 
 @api_view(['GET'])
@@ -56,6 +61,19 @@ def logout(request):
         print(e)
     return Response({"success": "Successfully logged out."},
                     status=status.HTTP_200_OK)
+
+@api_view(['GET'])
+def get_users(req):
+    users = User.objects.all()
+    serializer = UserSerializer(users, many=True)
+    return Response(serializer.data)
+
+@api_view(['DELETE'])
+def delete_user(req, pk):
+    user = User.objects.get(id=pk)
+    serializer = UserSerializer(user)
+    user.delete()
+    return Response(serializer.data)
 
 
 @api_view(['GET'])
@@ -81,15 +99,15 @@ def get_post(request, pk):
 @authentication_classes([SessionAuthentication, TokenAuthentication])
 @permission_classes([IsAuthenticated])
 def add_post(request):
-    id = User.objects.get(username = request.user).id
+    username = User.objects.get(username = request.user).username
 
-    serializer = PostSerializer(data=request.data, context={'author': id})      #overriding create method->called after save ig
+    serializer = PostSerializer(data=request.data, context={'author': username})      #overriding create method->called after save ig
 
     if serializer.is_valid():
         serializer.save()
         return Response(serializer.data, status=status.HTTP_201_CREATED)  # Return success response
     else:
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"error": serializer.errors})
 
 
 @authentication_classes([SessionAuthentication, TokenAuthentication])
@@ -97,13 +115,13 @@ def add_post(request):
 @api_view(['POST', 'PUT'])
 def update_post(request, pk):
     post = Posts.objects.get(id = pk)
-    if post.author_id != request.user:
-        return Response({"error": 'Unauthorized action'}, HTTP_401_UNAUTHORIZED)
+    if post.author_username != str(request.user):
+        return Response({"error": 'Unauthorized action'})
     serializer = PostSerializer(instance=post, data=request.data)
     if serializer.is_valid() :
         serializer.save()
     else:
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return Response(serializer.errors)
     return Response(serializer.data)
 
 
@@ -112,7 +130,7 @@ def update_post(request, pk):
 @api_view(['POST', 'DELETE'])
 def delete_post(request, pk):
     post = Posts.objects.get(id=pk)
-    if post.author_id != request.user:
+    if post.author_username != str(request.user):
         return Response({"error": 'Unauthorized action'}, HTTP_401_UNAUTHORIZED)
     serializer = PostSerializer(post)
     post.delete()
@@ -123,16 +141,50 @@ def delete_post(request, pk):
 # DB model and serialiser don't always go together.
 # Serialiser is only needed when we have to parse req data into model or send model through resp.
 
-@api_view(['PUT'])
+@api_view(['POST'])
 @authentication_classes([SessionAuthentication, TokenAuthentication])
 @permission_classes([IsAuthenticated])
 def like_post(request, pk):
-    post = get_object_or_404(Posts, id = pk)
-    post.likes += 1
-    post.save()
-    return Response('Like successful')
+    post = Posts.objects.filter(id=pk).first()
 
-# extension - 1 user can only like once - need to store users in likes
+    like, created = Likes.objects.get_or_create(post=post, user=request.user)
+    if created:
+        post.likes_no += 1
+        post.save()
+        return Response('Like successful')
+    else:
+        return Response("Like already exists.")
+
+
+@api_view(['DELETE'])
+@authentication_classes([SessionAuthentication, TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def unlike_post(request, pk):
+    post = Posts.objects.filter(id=pk).first()
+
+    like = Likes.objects.filter(post=post, user=request.user).first()
+    if not like:
+        return Response({'error': 'No like found'})
+    like.delete()
+    post.likes_no -= 1
+    post.save()
+    return Response('Unlike successful')
+
+
+@api_view(['GET'])
+def get_likes(req):
+    likes = Likes.objects.all()
+    serializer = LikesSerializer(likes, many=True)
+    return Response(serializer.data)
+
+@api_view(['GET'])
+@authentication_classes([SessionAuthentication, TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def get_like_status(request, pk):
+    post = Posts.objects.filter(id=pk).first()
+    like = Likes.objects.filter(post=post, user=request.user).first()
+    return Response({'isLiked': bool(like)})
+
 
 @api_view(['GET'])
 def search_post_by_tag(req, tag):
