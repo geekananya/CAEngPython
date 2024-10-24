@@ -101,6 +101,8 @@ def get_post(request, pk):
 def add_post(request):
     username = User.objects.get(username = request.user).username
 
+
+
     serializer = PostSerializer(data=request.data, context={'author': username})      #overriding create method->called after save ig
 
     if serializer.is_valid():

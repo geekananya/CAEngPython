@@ -7,14 +7,15 @@ class Posts(models.Model):
     # author_id = models.IntegerField()
     author_username = models.CharField(max_length=20)
     body = models.TextField()
+    image = models.FileField(null=True, upload_to='images/')
     tags = models.CharField(default="", blank=True, max_length=100) # list of tags separated by space
     likes_no = models.IntegerField(default=0)      # possibly store usernames of liked separated by space
     created_at = models.DateTimeField(auto_now_add=True)
 
 
 class PostsAdmin(admin.ModelAdmin):        # change the django admin model display
-    list_display = ('id', 'author_username', 'body', 'tags', 'likes_no','created_at')
-    fields = ('author_username', 'body', 'tags', 'likes')
+    list_display = ('id', 'author_username', 'body', 'image', 'tags', 'likes_no','created_at')
+    fields = ('author_username', 'body', 'image', 'tags', 'likes_no')
 
 #
 # class Users(models.Model):
